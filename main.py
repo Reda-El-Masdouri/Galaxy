@@ -18,8 +18,8 @@ class MainWidget(Widget):
     perspective_point_x = NumericProperty(0)
     perspective_point_y = NumericProperty(0)
 
-    V_NB_LINES = 4
-    V_LINES_SPACING = .1     #pourcentage in screen width
+    V_NB_LINES = 10
+    V_LINES_SPACING = .2     #pourcentage in screen width
     vertical_lines = []
 
     H_NB_LINES = 8
@@ -30,7 +30,7 @@ class MainWidget(Widget):
     current_offset_x = 0
     current_speed_x = 0
 
-    SPEED = 2
+    SPEED = 6
     SPEED_X = 12
 
     current_y_loop = 0
@@ -44,6 +44,7 @@ class MainWidget(Widget):
         self.init_vertical_lines()
         self.init_horizontal_lines()
         self.init_tiles()
+        self.pre_fill_tiles_coordinates()
         self.generate_tiles_coordinates()
         if self.is_desktop():
             self._keyboard = Window.request_keyboard(self.keyboard_closed, self)
@@ -72,47 +73,66 @@ class MainWidget(Widget):
             Color(1, 1, 1)
             for i in range(self.NB_TILES):
                 self.tiles.append(Quad())
+    def pre_fill_tiles_coordinates(self):
+        for i in range(0, 10):
+            self.tiles_coordinates.append((0,i))
+
+    
     def generate_tiles_coordinates(self):
-        last_y = 0
         last_x = 0
+        last_y = 0
+
+        # supprimer les coordonnées sorties de l'écran
+        # ti_y < self.current_y_loop
         for i in range(len(self.tiles_coordinates)-1, -1, -1):
             if self.tiles_coordinates[i][1] < self.current_y_loop:
                 del self.tiles_coordinates[i]
+
         if len(self.tiles_coordinates) > 0:
             last_coordinate = self.tiles_coordinates[-1]
-            last_y = last_coordinate[1] +1 
             last_x = last_coordinate[0]
+            last_y = last_coordinate[1]+1
 
         for i in range(len(self.tiles_coordinates), self.NB_TILES):
             r = random.randint(0, 2)
-            # r = 0 -> avant
-            # r=1 -> droite
-            # r=3 -> gauche
-            self.tiles_coordinates.append((last_x,last_y))            
+            # 0 -> en avant
+            # 1 -> droite
+            # 2 -> gauche
+            start_index = -int(self.V_NB_LINES / 2) + 1
+            end_index = start_index + self.V_NB_LINES - 1
+            if last_x <= start_index:
+                r = 1
+            if last_x >= end_index:
+                r = 2
+
+            self.tiles_coordinates.append((last_x, last_y))
             if r == 1:
                 last_x += 1
-                self.tiles_coordinates.append((last_x,last_y))
-                last_y += 1 
-                self.tiles_coordinates.append((last_x,last_y))
+                self.tiles_coordinates.append((last_x, last_y))
+                last_y += 1
+                self.tiles_coordinates.append((last_x, last_y))
             elif r == 2:
                 last_x -= 1
-                self.tiles_coordinates.append((last_x,last_y))
-                last_y += 1 
-                self.tiles_coordinates.append((last_x,last_y))
+                self.tiles_coordinates.append((last_x, last_y))
+                last_y += 1
+                self.tiles_coordinates.append((last_x, last_y))
             last_y += 1 
     def update_tiles(self):
-        for i in range(self.NB_TILES):
+        for i in range(0, self.NB_TILES):
             tile = self.tiles[i]
             tile_coordinates = self.tiles_coordinates[i]
             xmin, ymin = self.get_tile_coordinates(tile_coordinates[0], tile_coordinates[1])
-            xmax, ymax = self.get_tile_coordinates(tile_coordinates[0] +1, tile_coordinates[1] +1)
+            xmax, ymax = self.get_tile_coordinates(tile_coordinates[0]+1, tile_coordinates[1]+1)
 
-            x1, y1 = self.transform(xmin,ymin)
-            x2, y2 = self.transform(xmin,ymax)
-            x3, y3 = self.transform(xmax,ymax)
-            x4, y4 = self.transform(xmax,ymin)
+            #  2     3
+            #
+            #  1     4
+            x1, y1 = self.transform(xmin, ymin)
+            x2, y2 = self.transform(xmin, ymax)
+            x3, y3 = self.transform(xmax, ymax)
+            x4, y4 = self.transform(xmax, ymin)
 
-            tile.points = [x1,y1,x2,y2,x3,y3,x4,y4]
+            tile.points = [x1, y1, x2, y2, x3, y3, x4, y4]
     def get_line_x_from_index(self, index):
         central_line_x = self.perspective_point_x
         spacing = self.V_LINES_SPACING * self.width
