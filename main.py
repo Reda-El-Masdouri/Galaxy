@@ -1,3 +1,4 @@
+import random
 from tkinter.messagebox import NO
 from kivy.config import Config
 Config.set('graphics', 'width', '900')
@@ -73,16 +74,32 @@ class MainWidget(Widget):
                 self.tiles.append(Quad())
     def generate_tiles_coordinates(self):
         last_y = 0
+        last_x = 0
         for i in range(len(self.tiles_coordinates)-1, -1, -1):
             if self.tiles_coordinates[i][1] < self.current_y_loop:
                 del self.tiles_coordinates[i]
         if len(self.tiles_coordinates) > 0:
             last_coordinate = self.tiles_coordinates[-1]
             last_y = last_coordinate[1] +1 
-        for i in range(len(self.tiles_coordinates), self.NB_TILES):
-            self.tiles_coordinates.append((0,last_y))
-            last_y += 1 
+            last_x = last_coordinate[0]
 
+        for i in range(len(self.tiles_coordinates), self.NB_TILES):
+            r = random.randint(0, 2)
+            # r = 0 -> avant
+            # r=1 -> droite
+            # r=3 -> gauche
+            self.tiles_coordinates.append((last_x,last_y))            
+            if r == 1:
+                last_x += 1
+                self.tiles_coordinates.append((last_x,last_y))
+                last_y += 1 
+                self.tiles_coordinates.append((last_x,last_y))
+            elif r == 2:
+                last_x -= 1
+                self.tiles_coordinates.append((last_x,last_y))
+                last_y += 1 
+                self.tiles_coordinates.append((last_x,last_y))
+            last_y += 1 
     def update_tiles(self):
         for i in range(self.NB_TILES):
             tile = self.tiles[i]
