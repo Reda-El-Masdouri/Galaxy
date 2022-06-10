@@ -8,7 +8,7 @@ Config.set('graphics', 'height', '400')
 from kivy.uix.widget import Widget
 from kivy.properties import NumericProperty, Clock
 from kivy.app import App
-from kivy.graphics import Color, Line, Quad
+from kivy.graphics import Color, Line, Quad, Triangle
 from numpy import spacing
 from kivy.core.window import Window
 from kivy import platform
@@ -30,13 +30,18 @@ class MainWidget(Widget):
     current_offset_x = 0
     current_speed_x = 0
 
-    SPEED = 6
-    SPEED_X = 12
+    SPEED = 0.8
+    SPEED_X = 1.0
 
     current_y_loop = 0
     NB_TILES = 4
     tiles = []
     tiles_coordinates = []
+
+    SHIP_WIDTH = .1
+    SHIP_HEIGHT = 0.035
+    SHIP_BASE_Y = 0.04
+    ship = None
 
     def __init__(self, **kwargs):
         super(MainWidget, self).__init__(**kwargs)
@@ -44,8 +49,10 @@ class MainWidget(Widget):
         self.init_vertical_lines()
         self.init_horizontal_lines()
         self.init_tiles()
+        self.init_ship()
         self.pre_fill_tiles_coordinates()
         self.generate_tiles_coordinates()
+        
         if self.is_desktop():
             self._keyboard = Window.request_keyboard(self.keyboard_closed, self)
             self._keyboard.bind(on_key_down=self.on_keyboard_down)
@@ -67,7 +74,22 @@ class MainWidget(Widget):
             # V_LINES_SPACING
             for i in range(0, self.V_NB_LINES):
                 self.vertical_lines.append(Line())
-    
+
+    def init_ship(self):
+        with self.canvas:
+            Color(0, 0, 0)
+            self.ship = Triangle()
+
+    def update_ship(self):
+        center_x = self.width/2
+        base_y = self.SHIP_BASE_Y * self.height
+        half_width = self.SHIP_WIDTH * self.width /2
+        ship_height = self.SHIP_HEIGHT * self.height
+        x1, y1 = self.transform(center_x - half_width, base_y)
+        x2, y2 = self.transform(center_x, base_y + ship_height)
+        x3, y3, = self.transform(center_x + half_width, base_y)
+        self.ship.points = [x1, y1, x2, y2, x3, y3]        
+
     def init_tiles(self):
         with self.canvas:
             Color(1, 1, 1)
@@ -184,11 +206,15 @@ class MainWidget(Widget):
         self.update_vertical_lines()
         self.update_horizontal_lines()
         self.update_tiles()
+        self.update_ship()
         time_factor = dt * 60
-        self.current_offset_y += self.SPEED * time_factor
+        speed_y = self.SPEED * self.height/100
+        self.current_offset_y += speed_y * time_factor
+
         spacing_y = self.H_LINES_SPACING * self.height
 
-        self.current_offset_x += self.current_speed_x * time_factor
+        speed_x = self.current_speed_x * self.width/100
+        self.current_offset_x += speed_x * time_factor
         if self.current_offset_y >= spacing_y:
             self.current_offset_y -= spacing_y
             self.current_y_loop += 1
