@@ -7,15 +7,20 @@ Config.set('graphics', 'height', '400')
 
 from kivy.core.window import Window
 from kivy.app import App
+from kivy.uix.relativelayout import RelativeLayout
 from kivy.graphics.context_instructions import Color
 from kivy.graphics.vertex_instructions import Line, Quad, Triangle
-from kivy.properties import NumericProperty, Clock
+from kivy.properties import NumericProperty, Clock, ObjectProperty
 from kivy.uix.widget import Widget
 import random
+from kivy.lang import Builder
 
-class MainWidget(Widget):
+Builder.load_file("menu.kv")
+
+class MainWidget(RelativeLayout):
     from transforms import transform, transform_2D, transform_perspective
     from user_actions import on_keyboard_up, on_keyboard_down, keyboard_closed, on_touch_up, on_touch_down
+    menu_widget = ObjectProperty()
     perspective_point_x = NumericProperty(0)
     perspective_point_y = NumericProperty(0)
 
@@ -27,11 +32,11 @@ class MainWidget(Widget):
     H_LINES_SPACING = .15  # percentage in screen width
     horizontal_lines = []
 
-    SPEED = .2
+    SPEED = .8
     current_offset_y = 0
     current_y_loop = 0
 
-    SPEED_X = .5
+    SPEED_X = 1.0
     current_speed_x = 0
     current_offset_x = 0
 
@@ -44,6 +49,10 @@ class MainWidget(Widget):
     SHIP_BASE_Y = 0.04
     ship = None
     ship_coordinates = [(0, 0), (0, 0), (0, 0)]
+
+    stat_game_over = False
+    stat_game_has_started = False
+    
 
     def __init__(self, **kwargs):
         super(MainWidget, self).__init__(**kwargs)
@@ -239,22 +248,26 @@ class MainWidget(Widget):
         self.update_horizontal_lines()
         self.update_tiles()
         self.update_ship()
+        if not self.stat_game_over and self.stat_game_has_started:
+            speed_y = self.SPEED * self.height / 100
+            self.current_offset_y += speed_y * time_factor
 
-        speed_y = self.SPEED * self.height / 100
-        self.current_offset_y += speed_y * time_factor
+            spacing_y = self.H_LINES_SPACING * self.height
+            while self.current_offset_y >= spacing_y:
+                self.current_offset_y -= spacing_y
+                self.current_y_loop += 1
+                self.generate_tiles_coordinates()
 
-        spacing_y = self.H_LINES_SPACING * self.height
-        if self.current_offset_y >= spacing_y:
-            self.current_offset_y -= spacing_y
-            self.current_y_loop += 1
-            self.generate_tiles_coordinates()
+            speed_x = self.current_speed_x * self.width / 100
+            self.current_offset_x += speed_x * time_factor
 
-        speed_x = self.current_speed_x * self.width / 100
-        self.current_offset_x += speed_x * time_factor
-
-        if not self.check_ship_collisions():
+        if not self.check_ship_collisions() and not self.stat_game_over:
+            self.stat_game_over = True
+            self.menu_widget.opacity = 1
             print("GAME OVER")
-
+    def on_menu_button_pressed(self):
+        self.stat_game_has_started = True
+        self.menu_widget.opacity = 0
 class GalaxyApp(App):
     pass
 

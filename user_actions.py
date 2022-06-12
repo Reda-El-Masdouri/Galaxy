@@ -1,3 +1,5 @@
+from kivy.uix.relativelayout import RelativeLayout
+
 def keyboard_closed(self):
     self._keyboard.unbind(on_key_down=self._on_keyboard_down)
     self._keyboard.unbind(on_key_up=self._on_keyboard_up)
@@ -17,12 +19,14 @@ def on_keyboard_up(self, keyboard, keycode):
 
 
 def on_touch_down(self, touch):
-    if touch.x < self.width / 2:
-        # print("<-")
-        self.current_speed_x = self.SPEED_X
-    else:
-        # print("->")
-        self.current_speed_x = -self.SPEED_X
+    if not self.stat_game_over and self.stat_game_has_started:
+        if touch.x < self.width / 2:
+            # print("<-")
+            self.current_speed_x = self.SPEED_X
+        else:
+            # print("->")
+            self.current_speed_x = -self.SPEED_X
+    return super(RelativeLayout, self).on_touch_down(touch)
 
 
 def on_touch_up(self, touch):
