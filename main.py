@@ -2,6 +2,8 @@
 
 from kivy import platform
 from kivy.config import Config
+from kivy.core.audio import SoundLoader
+
 Config.set('graphics', 'width', '900')
 Config.set('graphics', 'height', '400')
 
@@ -10,7 +12,7 @@ from kivy.app import App
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.graphics.context_instructions import Color
 from kivy.graphics.vertex_instructions import Line, Quad, Triangle
-from kivy.properties import NumericProperty, Clock, ObjectProperty
+from kivy.properties import NumericProperty, Clock, ObjectProperty, StringProperty
 from kivy.uix.widget import Widget
 import random
 from kivy.lang import Builder
@@ -52,7 +54,11 @@ class MainWidget(RelativeLayout):
 
     stat_game_over = False
     stat_game_has_started = False
-    
+
+    menu_title = StringProperty("G   A   L   A   X   Y")
+    menu_button_title = StringProperty("START")
+
+    score_txt = StringProperty("")
 
     def __init__(self, **kwargs):
         super(MainWidget, self).__init__(**kwargs)
@@ -61,7 +67,7 @@ class MainWidget(RelativeLayout):
         self.init_horizontal_lines()
         self.init_tiles()
         self.init_ship()
-
+        self.init_audio()
         self.reset_game()
 
         if self.is_desktop():
@@ -70,12 +76,20 @@ class MainWidget(RelativeLayout):
             self._keyboard.bind(on_key_up=self.on_keyboard_up)
         Clock.schedule_interval(self.update, 1.0 / 60.0)
 
+    def init_audio(self):
+        SoundLoader.load('audio/begin.wav')
+        SoundLoader.load('audio/galaxy.wav')
+        SoundLoader.load('audio/gameover_voice.wav')
+        SoundLoader.load('audio/gameover_impact.wav')
+        SoundLoader.load('audio/restart.wav')
+
     def reset_game(self):
         self.current_offset_y = 0
         self.current_y_loop = 0
         self.current_speed_x = 0
         self.current_offset_x = 0
         self.tiles_coordinates = []
+        self.score_txt = "SCORE: " + str(self.current_y_loop)
         self.pre_fill_tiles_coordinates()
         self.generate_tiles_coordinates()
         self.stat_game_over = False
@@ -260,11 +274,12 @@ class MainWidget(RelativeLayout):
         if not self.stat_game_over and self.stat_game_has_started:
             speed_y = self.SPEED * self.height / 100
             self.current_offset_y += speed_y * time_factor
-
             spacing_y = self.H_LINES_SPACING * self.height
             while self.current_offset_y >= spacing_y:
                 self.current_offset_y -= spacing_y
                 self.current_y_loop += 1
+
+                self.score_txt = "SCORE: " + str(self.current_y_loop)
                 self.generate_tiles_coordinates()
 
             speed_x = self.current_speed_x * self.width / 100
@@ -272,9 +287,13 @@ class MainWidget(RelativeLayout):
 
         if not self.check_ship_collisions() and not self.stat_game_over:
             self.stat_game_over = True
+            
+            self.menu_title = "G  A  M  E   O  V  E  R"
+            self.menu_button_title = "RESTART"
             self.menu_widget.opacity = 1
             print("GAME OVER")
     def on_menu_button_pressed(self):
+        self.score_txt = "SCORE: 0"
         self.reset_game()
         self.stat_game_has_started = True
         self.menu_widget.opacity = 0
