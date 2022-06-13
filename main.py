@@ -60,14 +60,20 @@ class MainWidget(RelativeLayout):
 
     score_txt = StringProperty("")
 
+    sound_begin = None
+    sound_galaxy = None
+    sound_gameover_voice = None
+    sound_gameover_impact = None
+    sound_restart = None
+    sound_music1 = None
     def __init__(self, **kwargs):
         super(MainWidget, self).__init__(**kwargs)
         # print("INIT W:" + str(self.width) + " H:" + str(self.height))
+        self.init_audio()
         self.init_vertical_lines()
         self.init_horizontal_lines()
         self.init_tiles()
         self.init_ship()
-        self.init_audio()
         self.reset_game()
 
         if self.is_desktop():
@@ -75,13 +81,23 @@ class MainWidget(RelativeLayout):
             self._keyboard.bind(on_key_down=self.on_keyboard_down)
             self._keyboard.bind(on_key_up=self.on_keyboard_up)
         Clock.schedule_interval(self.update, 1.0 / 60.0)
+        self.sound_galaxy.play()
 
     def init_audio(self):
-        SoundLoader.load('audio/begin.wav')
-        SoundLoader.load('audio/galaxy.wav')
-        SoundLoader.load('audio/gameover_voice.wav')
-        SoundLoader.load('audio/gameover_impact.wav')
-        SoundLoader.load('audio/restart.wav')
+        self.sound_begin = SoundLoader.load('audio/begin.wav')
+        self.sound_galaxy = SoundLoader.load('audio/galaxy.wav')
+        self.sound_gameover_voice = SoundLoader.load('audio/gameover_voice.wav')
+        self.sound_gameover_impact = SoundLoader.load('audio/gameover_impact.wav')
+        self.sound_restart = SoundLoader.load('audio/restart.wav')
+        self.sound_music1 = SoundLoader.load('audio/music1.wav')
+
+        self.sound_music1.volume = 1
+        self.sound_begin.volume = .25
+        self.sound_galaxy.volume = .25
+        self.sound_gameover_voice.volume = .25
+        self.sound_gameover_impact.volume = .6
+        self.sound_restart.volume = .25
+        
 
     def reset_game(self):
         self.current_offset_y = 0
@@ -291,12 +307,26 @@ class MainWidget(RelativeLayout):
             self.menu_title = "G  A  M  E   O  V  E  R"
             self.menu_button_title = "RESTART"
             self.menu_widget.opacity = 1
+            self.sound_music1.stop()
+            self.sound_gameover_impact.play()
+            Clock.schedule_once(self.play_sound_gameover_voice, 1)
             print("GAME OVER")
+
+    def play_sound_gameover_voice(self, dt):
+        if self.stat_game_over:
+            self.sound_gameover_voice.play()
+
     def on_menu_button_pressed(self):
+        if self.stat_game_over:
+            self.sound_restart.play()
+        else:
+            self.sound_begin.play()
+        self.sound_music1.play()
         self.score_txt = "SCORE: 0"
         self.reset_game()
         self.stat_game_has_started = True
         self.menu_widget.opacity = 0
+        
 class GalaxyApp(App):
     pass
 
